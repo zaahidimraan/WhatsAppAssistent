@@ -1,5 +1,6 @@
 name: Deploy Z tech portfolio to GitHub Pages
 
+# Builds ztech-portfolio/ on every push to main/master and publishes to Pages.
 on:
   push:
     branches: [main, master]
