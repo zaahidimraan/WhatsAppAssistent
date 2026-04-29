@@ -1,0 +1,18 @@
+# Environment / secrets — never commit
+.env
+.env.*
+!.env.example
+
+# Node / Vite build artifacts (also covered inside ztech-portfolio/.gitignore)
+node_modules/
+dist/
+.vite/
+
+# Editor / IDE
+.claude/
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
