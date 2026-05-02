@@ -2,9 +2,9 @@ import Orb from './Orb'
 import SectionLabel from './SectionLabel'
 
 const PILLARS = [
-  ['LISTEN', 'Multichannel intake — WhatsApp, web, email.'],
-  ['DECIDE', 'Agent reasoning across calendar + history.'],
-  ['ACT', 'Books, replies, charges, learns. Repeat.'],
+  ['LISTEN', 'Multichannel intake — chat, voice, forms, email.'],
+  ['DECIDE', 'Agent reasoning across context, tools & history.'],
+  ['ACT', 'Books, replies, charges, updates, learns. Repeat.'],
 ]
 
 export default function Mind({ orbVariant, mouse }) {
@@ -36,8 +36,8 @@ export default function Mind({ orbVariant, mouse }) {
 
         <p className="reveal mt-8 text-lg text-ink-dim max-w-2xl mx-auto leading-relaxed">
           Every Z tech build is wired to a central reasoning core — a network of agents that
-          listen, decide, and act. It learns your school's tone, your instructors' schedules,
-          and your students' patterns.
+          listen, decide, and act. It learns your business's tone, your team's workflows,
+          and your customers' patterns.
         </p>
 
         <div className="reveal mt-12 grid sm:grid-cols-3 gap-4 max-w-3xl mx-auto">

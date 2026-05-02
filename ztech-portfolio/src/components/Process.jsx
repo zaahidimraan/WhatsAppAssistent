@@ -1,22 +1,22 @@
 import SectionLabel from './SectionLabel'
 
 const STEPS = [
-  ['Discover', '1 call. We map your booking flow & edge cases.'],
-  ['Build', 'Custom workflow on Make / n8n with your tools.'],
-  ['Train', 'We feed it your transcripts so it sounds like you.'],
+  ['Discover', '1 call. We map your workflow & edge cases.'],
+  ['Build', 'Custom scenario on Make / n8n with your tools.'],
+  ['Train', 'We feed it your data so it sounds like your team.'],
   ['Hand-off', 'You get the workflow, dashboards, and a 90-day SLA.'],
 ]
 
 const MARQUEE_TOOLS = [
   'WhatsApp Cloud API', 'Make.com', 'n8n', 'Twilio', 'OpenAI',
-  'Google Calendar', 'Stripe', 'Supabase', 'Airtable', 'Zapier',
+  'Google Calendar', 'Stripe', 'HubSpot', 'Slack', 'Airtable', 'Zapier', 'Notion',
 ]
 
 export default function Process() {
   return (
     <section id="process" className="relative py-28 lg:py-36">
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 grid lg:grid-cols-12 gap-10">
-        <div className="lg:col-span-5">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div className="lg:col-span-5 min-w-0">
           <SectionLabel num="03" title="How we ship" />
           <h2 className="reveal mt-6 display text-[clamp(36px,5vw,60px)] text-white">
             We don't sell<br />
@@ -46,11 +46,11 @@ export default function Process() {
           </ol>
         </div>
 
-        <div className="lg:col-span-7 reveal">
+        <div className="lg:col-span-7 min-w-0 reveal">
           <WorkflowDiagram />
 
           {/* Marquee */}
-          <div className="mt-6 overflow-hidden glass rounded-2xl py-4">
+          <div className="mt-6 overflow-hidden glass rounded-2xl py-4 px-6">
             <div className="marquee-track mono text-[11px] uppercase tracking-widest text-ink-dim">
               {Array.from({ length: 2 }).flatMap((_, k) =>
                 MARQUEE_TOOLS.map((t, i) => (
@@ -67,16 +67,16 @@ export default function Process() {
   )
 }
 
-/* ─────────── WORKFLOW DIAGRAM (Make / n8n style scenario) ─────────── */
+/* ─────────── WORKFLOW DIAGRAM (Make / n8n style scenario, generalized) ─────────── */
 function WorkflowDiagram() {
   const nodes = [
-    { id: 'wa',  col: 0, row: 1,   label: 'WhatsApp Cloud', sub: 'Trigger · message_in', tone: 'cyber',    icon: '◐' },
-    { id: 'twi', col: 0, row: 2,   label: 'Twilio SMS',     sub: 'Trigger · sms_in',     tone: 'cyber',    icon: '◑' },
+    { id: 'wa',  col: 0, row: 0.7, label: 'WhatsApp Cloud', sub: 'Trigger · message_in', tone: 'cyber',    icon: '◐' },
+    { id: 'twi', col: 0, row: 2.3, label: 'Web form',       sub: 'Trigger · submit',     tone: 'cyber',    icon: '◑' },
     { id: 'ai',  col: 1, row: 1.5, label: 'AI Router',      sub: 'OpenAI · classify',    tone: 'electric', icon: '✦' },
-    { id: 'cal', col: 2, row: 0.5, label: 'Calendar',       sub: 'Google · find_slot',   tone: 'neutral',  icon: '▣' },
-    { id: 'pay', col: 2, row: 1.5, label: 'Stripe',         sub: 'create_hold',          tone: 'neutral',  icon: '◇' },
-    { id: 'db',  col: 2, row: 2.5, label: 'Supabase',       sub: 'log + waitlist',       tone: 'neutral',  icon: '◈' },
-    { id: 'out', col: 3, row: 1.5, label: 'Reply',          sub: 'WhatsApp · confirm',   tone: 'electric', icon: '→' },
+    { id: 'cal', col: 2, row: 0.2, label: 'Calendar',       sub: 'Google · find_slot',   tone: 'neutral',  icon: '▣' },
+    { id: 'pay', col: 2, row: 1.5, label: 'CRM',            sub: 'HubSpot · upsert',     tone: 'neutral',  icon: '◇' },
+    { id: 'db',  col: 2, row: 2.8, label: 'Database',       sub: 'log + enrich',         tone: 'neutral',  icon: '◈' },
+    { id: 'out', col: 3, row: 1.5, label: 'Reply',          sub: 'Multi-channel out',    tone: 'electric', icon: '→' },
   ]
   const edges = [
     ['wa', 'ai'], ['twi', 'ai'],
@@ -84,9 +84,11 @@ function WorkflowDiagram() {
     ['cal', 'out'], ['pay', 'out'], ['db', 'out'],
   ]
 
-  const W = 720, H = 420, padX = 50, padY = 40
-  const colW = (W - padX * 2) / 3
-  const rowH = 90
+  const W = 760, H = 420
+  const NODE_W = 130, NODE_H = 60
+  const padX = 24, padY = 40
+  const colW = (W - padX * 2 - NODE_W) / 3
+  const rowH = 86
   const pos = (id) => {
     const n = nodes.find((x) => x.id === id)
     return { x: padX + n.col * colW, y: padY + n.row * rowH }
@@ -102,7 +104,7 @@ function WorkflowDiagram() {
           <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
           <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
         </div>
-        <span className="mono text-[11px] text-ink-faint ml-2">make · scenario / driving-school-bot</span>
+        <span className="mono text-[11px] text-ink-faint ml-2">make · scenario / z-tech-workflow</span>
         <span className="ml-auto mono text-[10px] text-emerald-400 flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> ACTIVE
         </span>
@@ -122,21 +124,26 @@ function WorkflowDiagram() {
               <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.7" />
               <stop offset="100%" stopColor="#a855f7" stopOpacity="0.7" />
             </linearGradient>
-            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
               <path d="M0,0 L10,5 L0,10 z" fill="#a855f7" />
             </marker>
           </defs>
 
-          {/* Edges */}
+          {/* Edges — start just outside source's right edge, end just outside target's left edge */}
           {edges.map(([a, b], i) => {
             const p1 = pos(a), p2 = pos(b)
-            const x1 = p1.x + 130, y1 = p1.y + 30
-            const x2 = p2.x, y2 = p2.y + 30
-            const mx = (x1 + x2) / 2
-            const d = `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`
+            const x1 = p1.x + NODE_W + 2
+            const y1 = p1.y + NODE_H / 2
+            const x2 = p2.x - 8
+            const y2 = p2.y + NODE_H / 2
+            const dx = (x2 - x1) * 0.5
+            const d = `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`
             return (
               <g key={i}>
-                <path d={d} fill="none" stroke="url(#edge-grad)" strokeWidth="1.5" markerEnd="url(#arrow)" />
+                <path d={d} fill="none" stroke="url(#edge-grad)" strokeWidth="1.6" markerEnd="url(#arrow)" />
+                {/* Socket dot at source — reads as a true connection point */}
+                <circle cx={x1} cy={y1} r="2.5" fill="#7dd3fc" />
+                {/* Animated data pulse */}
                 <circle r="3" fill="#7dd3fc">
                   <animateMotion dur={`${2.4 + (i % 3) * 0.6}s`} repeatCount="indefinite" path={d} />
                 </circle>
@@ -149,7 +156,7 @@ function WorkflowDiagram() {
             const p = pos(n.id)
             return (
               <g key={n.id} transform={`translate(${p.x},${p.y})`}>
-                <rect x="0" y="0" width="130" height="60" rx="10"
+                <rect x="0" y="0" width={NODE_W} height={NODE_H} rx="10"
                   fill="rgba(17,20,31,0.92)"
                   stroke={tone(n.tone)} strokeOpacity="0.55" strokeWidth="1" />
                 <rect x="8" y="10" width="22" height="22" rx="6"
@@ -172,7 +179,7 @@ function WorkflowDiagram() {
           {['TRIGGER', 'ROUTE', 'ACT', 'RESPOND'].map((t, i) => (
             <text
               key={t}
-              x={padX + i * colW + 65}
+              x={padX + i * colW + NODE_W / 2}
               y={20}
               textAnchor="middle"
               fontSize="9"

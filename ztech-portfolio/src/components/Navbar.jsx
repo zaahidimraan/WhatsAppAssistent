@@ -23,7 +23,7 @@ export default function Navbar() {
         </a>
 
         <nav className="hidden md:flex items-center gap-8 text-sm text-ink-dim">
-          <a href="#services" className="hover:text-white transition-colors">Services</a>
+          <a href="#services" className="hover:text-white transition-colors">What we build</a>
           <a href="#mind" className="hover:text-white transition-colors">The 3D Mind</a>
           <a href="#process" className="hover:text-white transition-colors">Process</a>
           <a href="#contact" className="hover:text-white transition-colors">Contact</a>

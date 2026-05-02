@@ -2,10 +2,10 @@ import Orb from './Orb'
 import CornerFrame from './CornerFrame'
 
 const STATS = [
-  ['97%', 'booking conversion'],
+  ['−70%', 'manual hours saved'],
   ['24/7', 'always on'],
   ['< 30s', 'avg response'],
-  ['3.4×', 'calendar fill rate'],
+  ['14d', 'from brief to live'],
 ]
 
 export default function Hero({ orbVariant, mouse }) {
@@ -25,7 +25,7 @@ export default function Hero({ orbVariant, mouse }) {
               <span className="absolute inline-flex w-full h-full rounded-full bg-cyber opacity-75 animate-ping" />
               <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-cyber" />
             </span>
-            AI · AUTOMATION · BOOKING SYSTEMS
+            AI · WORKFLOW AUTOMATION · CUSTOM BOTS
           </span>
         </div>
 
@@ -40,8 +40,8 @@ export default function Hero({ orbVariant, mouse }) {
           className="fade-in-up mt-8 text-center text-lg lg:text-xl text-ink-dim max-w-2xl mx-auto leading-relaxed"
           style={{ animationDelay: '0.15s' }}
         >
-          Building intelligent systems that move businesses forward. We craft AI-driven bots
-          that fill calendars, manage students, and run while you sleep.
+          We build intelligent systems that move businesses forward. AI agents and workflows
+          that handle the repetitive work — so your team can focus on the work that matters.
         </p>
 
         <div
@@ -49,12 +49,12 @@ export default function Hero({ orbVariant, mouse }) {
           style={{ animationDelay: '0.25s' }}
         >
           <a href="#services" className="btn-primary px-6 py-3.5 rounded-lg flex items-center gap-2">
-            See the booking bot
+            See what we build
             <span className="mono text-xs opacity-70">↗</span>
           </a>
           <a href="#contact" className="btn-ghost rounded-lg px-6 py-3.5 text-sm flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Available · Apr 2026
+            Available · May 2026
           </a>
         </div>
 
@@ -75,7 +75,7 @@ export default function Hero({ orbVariant, mouse }) {
           </div>
         </div>
 
-        {/* Stats strip */}
+        {/* Stats strip — universal */}
         <div className="reveal mt-20 grid grid-cols-2 md:grid-cols-4 gap-px bg-[var(--line)] rounded-2xl overflow-hidden">
           {STATS.map(([n, l]) => (
             <div key={l} className="bg-bg1 p-6 lg:p-8">

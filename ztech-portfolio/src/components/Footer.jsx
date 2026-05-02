@@ -91,7 +91,7 @@ export default function Contact() {
           <div>© 2026 Z tech · all systems automated</div>
           <div className="flex gap-6 flex-wrap justify-center">
             <span>Built in the UK</span>
-            <span>v.2026.04</span>
+            <span>v.2026.05</span>
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               All systems operational
