@@ -5,7 +5,7 @@ const USE_CASES = {
   booking: {
     label: 'Booking & scheduling',
     title: 'Booking & scheduling bots',
-    desc: 'AI dispatchers that fill calendars, handle reschedules, and run while you sleep — for clinics, salons, driving schools, fitness studios, agencies.',
+    desc: 'AI dispatchers that fill calendars, handle reschedules, and run while you sleep — for clinics, salons, fitness studios, consultancies, and service-based agencies.',
     bullets: [
       'Auto-fills cancelled slots in under 60s',
       'WhatsApp · SMS · Web chat in one inbox',

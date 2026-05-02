@@ -20,7 +20,7 @@ export default function Contact() {
             </h2>
             <p className="mt-6 text-lg text-ink-dim max-w-xl leading-relaxed">
               One short call. We'll tell you within 20 minutes whether automation will move
-              the needle for your school — or whether it won't.
+              the needle for your business — or whether it won't.
             </p>
 
             <div className="mt-10 flex flex-wrap gap-3">
