@@ -1,0 +1,380 @@
+{
+  "name": "A1 Driving School WhatsApp Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "a1-driving-wa",
+        "responseMode": "onReceived",
+        "responseData": "noData",
+        "responseCode": 200,
+        "options": {}
+      },
+      "id": "webhook-in",
+      "name": "Twilio Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 400],
+      "webhookId": "a1-driving-wa"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "p1", "name": "from", "value": "={{ $json.body.From }}", "type": "string" },
+            { "id": "p2", "name": "phone", "value": "={{ $json.body.From.replace('whatsapp:', '') }}", "type": "string" },
+            { "id": "p3", "name": "msg", "value": "={{ $json.body.Body }}", "type": "string" },
+            { "id": "p4", "name": "to", "value": "={{ $json.body.To }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "extract",
+      "name": "Extract Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [400, 400]
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.history) staticData.history = {};\nconst phone = $input.item.json.phone;\nreturn [{\n  json: {\n    ...$input.item.json,\n    history: staticData.history[phone] || ''\n  }\n}];"
+      },
+      "id": "read-history",
+      "name": "Read History",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [600, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4.1-mini\",\n  \"max_tokens\": 600,\n  \"temperature\": 0.3,\n  \"top_p\": 1,\n  \"n\": 1,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are the WhatsApp assistant for A1 Driving School (instructor: Zahid, Liverpool/Merseyside).\\nToday is {{ $now.toFormat('cccc d MMMM yyyy') }} ({{ $now.toFormat('yyyy-MM-dd') }}). Current UK time is {{ $now.setZone('Europe/London').toFormat('HH:mm') }}.\\nAll lesson times use UK timezone Europe/London. Use offset +01:00 between late March and late October (BST), otherwise +00:00 (GMT).\\n\\nYOUR JOB: collect 6 fields and emit a booking JSON. Be direct and brief.\\n\\nThe 6 fields:\\n1. name\\n2. postcode (UK)\\n3. gearbox (manual or automatic)\\n4. testDate (the student's driving test date, or \\\"not booked\\\")\\n5. experience (number of prior lessons; 0 is fine)\\n6. lessonDateTime (when they want their first LESSON; ISO 8601 with UK offset, e.g. \\\"2026-05-05T15:00:00+01:00\\\")\\n\\nCONVERSATION FLOW (max 3 of your messages):\\nMSG 1: Ask for name, postcode, AND manual/automatic in ONE message.\\nMSG 2: Acknowledge what they answered, fill gaps from msg 1 if needed, then ask for: their TEST date (or 'not booked'), how many prior LESSONS they've had, and their preferred LESSON date and time. All in one message.\\nMSG 3: Once you have all 6 fields, immediately reply with ONLY this JSON, nothing else, no surrounding text, no confirmation question:\\n{\\\"intent\\\":\\\"book\\\",\\\"name\\\":\\\"...\\\",\\\"postcode\\\":\\\"...\\\",\\\"gearbox\\\":\\\"...\\\",\\\"testDate\\\":\\\"...\\\",\\\"experience\\\":\\\"...\\\",\\\"lessonDateTime\\\":\\\"...\\\"}\\n\\nCRITICAL RULES:\\n- NEVER ask the student to confirm. The moment all 6 fields are gathered, output the JSON. Do NOT say \\\"is that right?\\\" or \\\"to confirm...\\\" or \\\"shall I book that?\\\".\\n- TEST DATE and LESSON DATE are TWO DIFFERENT THINGS. Don't confuse them.\\n- The lessonDateTime MUST be in the future relative to today's date and current time above. If they give a past date or time, do NOT emit JSON. Reply: \\\"That time has already passed. Pick a date and time from now onwards please.\\\"\\n- If they give a date with no time, ask for the time. If a time with no date, ask for the date. Don't guess.\\n- If they give partial info, ask only for what's missing.\\n- UK date formats: 3/5/2026 means 3 May 2026, NOT 5 March.\\n\\nIf the student says stop / cancel / unsubscribe, reply with ONLY:\\n{\\\"intent\\\":\\\"optout\\\"}\\n\\nSTYLE:\\n- Max 2 sentences per reply. Casual British (hiya, lovely, sorted, no worries).\\n- Never quote prices. Say \\\"Zahid will confirm based on your area\\\".\\n- For voice notes or images: \\\"Sorry, text only please.\\\"\\n- Never claim you're an AI.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify('Conversation so far: ' + $json.history + ' New message from student: ' + $json.msg) }}\n    }\n  ]\n}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "gpt",
+      "name": "OpenAI Chat",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [820, 400]
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.history) staticData.history = {};\nconst extract = $('Extract Fields').item.json;\nconst phone = extract.phone;\nconst msg = extract.msg;\nconst content = $input.item.json.choices[0].message.content;\nconst old = staticData.history[phone] || '';\nstaticData.history[phone] = `${old} Student: ${msg} Assistant:${content} `;\nstaticData.lastUpdated = new Date().toISOString();\nreturn [{\n  json: {\n    phone,\n    from: extract.from,\n    msg,\n    content\n  }\n}];"
+      },
+      "id": "update-history",
+      "name": "Update History",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1040, 400]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "outputKey": "book",
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.content }}",
+                    "rightValue": "\"intent\":\"book\"",
+                    "operator": { "type": "string", "operation": "contains" }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "optout",
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.content }}",
+                    "rightValue": "\"intent\":\"optout\"",
+                    "operator": { "type": "string", "operation": "contains" }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": { "fallbackOutput": "extra", "renameFallbackOutput": "chat" }
+      },
+      "id": "router",
+      "name": "Route Intent",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1260, 400]
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const content = $input.item.json.content;\nconst match = content.match(/\\{[\\s\\S]*\\}/);\nif (!match) {\n  throw new Error('No JSON object found in GPT reply: ' + content);\n}\nconst booking = JSON.parse(match[0]);\nreturn [{\n  json: {\n    ...$input.item.json,\n    name: booking.name || '',\n    postcode: booking.postcode || '',\n    gearbox: booking.gearbox || '',\n    testDate: booking.testDate || '',\n    experience: booking.experience || '',\n    lessonDateTime: booking.lessonDateTime || ''\n  }\n}];"
+      },
+      "id": "parse-json",
+      "name": "Parse Booking JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1480, 200]
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const booking = $input.item.json;\nconst raw = booking.lessonDateTime;\nlet isFuture = false;\nlet parsedTime = null;\nlet reason = '';\n\nif (!raw) {\n  reason = 'no lessonDateTime provided';\n} else {\n  const t = Date.parse(raw);\n  if (isNaN(t)) {\n    reason = 'unparseable date: ' + raw;\n  } else {\n    parsedTime = new Date(t).toISOString();\n    const now = Date.now();\n    isFuture = t > now;\n    if (!isFuture) reason = 'date is in the past';\n  }\n}\n\nreturn [{\n  json: {\n    ...booking,\n    isFuture,\n    parsedTime,\n    validationReason: reason\n  }\n}];"
+      },
+      "id": "validate-date",
+      "name": "Validate Date",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1700, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.isFuture }}",
+              "rightValue": "true",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "date-valid",
+      "name": "Date Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1900, 200]
+    },
+    {
+      "parameters": {
+        "resource": "event",
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "e237402afdc221d2986da86f4114c36d927a3b52ae3499ccaed9353470790515@group.calendar.google.com",
+          "mode": "id"
+        },
+        "returnAll": false,
+        "limit": 10,
+        "options": {
+          "timeMin": "={{ $json.lessonDateTime }}",
+          "timeMax": "={{ DateTime.fromISO($json.lessonDateTime).plus({ hours: 1 }).toISO() }}",
+          "singleEvents": true
+        }
+      },
+      "id": "check-availability",
+      "name": "Check Availability",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [2120, 100]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const events = $input.all();\nconst slotFree = events.length === 0;\nconst booking = $('Parse Booking JSON').item.json;\nreturn [{\n  json: {\n    slotFree,\n    conflictingEvents: events.length,\n    name: booking.name,\n    postcode: booking.postcode,\n    gearbox: booking.gearbox,\n    testDate: booking.testDate,\n    experience: booking.experience,\n    phone: booking.phone,\n    lessonDateTime: booking.lessonDateTime\n  }\n}];"
+      },
+      "id": "check-slot",
+      "name": "Check Slot",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2340, 100]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.slotFree }}",
+              "rightValue": "true",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "slot-free",
+      "name": "Slot Free?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2560, 100]
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "e237402afdc221d2986da86f4114c36d927a3b52ae3499ccaed9353470790515@group.calendar.google.com",
+          "mode": "id"
+        },
+        "start": "={{ $json.lessonDateTime }}",
+        "end": "={{ DateTime.fromISO($json.lessonDateTime).plus({ hours: 1 }).toISO() }}",
+        "additionalFields": {
+          "summary": "=Lesson - {{ $json.name }} - {{ $json.postcode }}",
+          "description": "=Gearbox: {{ $json.gearbox }}\nTest date: {{ $json.testDate }}\nPrior lessons: {{ $json.experience }}\nStudent phone: {{ $json.phone }}"
+        }
+      },
+      "id": "calendar",
+      "name": "Create Calendar Event",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [2780, 50]
+    },
+    {
+      "parameters": {
+        "resource": "sms",
+        "operation": "send",
+        "from": "+14155238886",
+        "to": "+447459267916",
+        "toWhatsapp": true,
+        "message": "=NEW LEAD for A1 Driving School: {{ $('Check Slot').item.json.name }} - {{ $('Check Slot').item.json.postcode }} - {{ $('Check Slot').item.json.gearbox }} | Lesson: {{ DateTime.fromISO($('Check Slot').item.json.lessonDateTime).setZone('Europe/London').toFormat('EEE d MMM h:mma') }} | Test: {{ $('Check Slot').item.json.testDate }} | Phone: {{ $('Check Slot').item.json.phone }}"
+      },
+      "id": "alert-zahid",
+      "name": "Alert Zahid",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [3000, 50]
+    },
+    {
+      "parameters": {
+        "resource": "sms",
+        "operation": "send",
+        "from": "+14155238886",
+        "to": "={{ $('Extract Fields').item.json.phone }}",
+        "toWhatsapp": true,
+        "message": "=Booked you in for {{ DateTime.fromISO($('Check Slot').item.json.lessonDateTime).setZone('Europe/London').toFormat('EEE d MMM') }} at {{ DateTime.fromISO($('Check Slot').item.json.lessonDateTime).setZone('Europe/London').toFormat('h:mma') }}! Zahid will confirm shortly. 👍"
+      },
+      "id": "confirm-student",
+      "name": "Confirm to Student",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [3220, 50]
+    },
+    {
+      "parameters": {
+        "resource": "sms",
+        "operation": "send",
+        "from": "+14155238886",
+        "to": "={{ $('Extract Fields').item.json.phone }}",
+        "toWhatsapp": true,
+        "message": "=Sorry, {{ DateTime.fromISO($('Check Slot').item.json.lessonDateTime).setZone('Europe/London').toFormat('EEE d MMM h:mma') }} is taken. What other date and time works for you?"
+      },
+      "id": "slot-taken",
+      "name": "Slot Taken Reply",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [2780, 200]
+    },
+    {
+      "parameters": {
+        "resource": "sms",
+        "operation": "send",
+        "from": "+14155238886",
+        "to": "={{ $('Extract Fields').item.json.phone }}",
+        "toWhatsapp": true,
+        "message": "That time has already passed. Please pick a date and time from now onwards (UK time)."
+      },
+      "id": "past-date-reply",
+      "name": "Past Date Reply",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [2120, 350]
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (staticData.history) {\n  delete staticData.history[$input.item.json.phone];\n}\nreturn [{ json: $input.item.json }];"
+      },
+      "id": "delete-history",
+      "name": "Clear History",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1480, 400]
+    },
+    {
+      "parameters": {
+        "resource": "sms",
+        "operation": "send",
+        "from": "+14155238886",
+        "to": "={{ $('Extract Fields').item.json.phone }}",
+        "toWhatsapp": true,
+        "message": "No worries, removed you. Text anytime if you change your mind."
+      },
+      "id": "optout-reply",
+      "name": "Optout Reply",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [1700, 400]
+    },
+    {
+      "parameters": {
+        "resource": "sms",
+        "operation": "send",
+        "from": "+14155238886",
+        "to": "={{ $('Extract Fields').item.json.phone }}",
+        "toWhatsapp": true,
+        "message": "={{ $('Update History').item.json.content }}"
+      },
+      "id": "chat-reply",
+      "name": "Chat Reply",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [1480, 600]
+    }
+  ],
+  "connections": {
+    "Twilio Webhook": { "main": [[{ "node": "Extract Fields", "type": "main", "index": 0 }]] },
+    "Extract Fields": { "main": [[{ "node": "Read History", "type": "main", "index": 0 }]] },
+    "Read History": { "main": [[{ "node": "OpenAI Chat", "type": "main", "index": 0 }]] },
+    "OpenAI Chat": { "main": [[{ "node": "Update History", "type": "main", "index": 0 }]] },
+    "Update History": { "main": [[{ "node": "Route Intent", "type": "main", "index": 0 }]] },
+    "Route Intent": {
+      "main": [
+        [{ "node": "Parse Booking JSON", "type": "main", "index": 0 }],
+        [{ "node": "Clear History", "type": "main", "index": 0 }],
+        [{ "node": "Chat Reply", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Booking JSON": { "main": [[{ "node": "Validate Date", "type": "main", "index": 0 }]] },
+    "Validate Date": { "main": [[{ "node": "Date Valid?", "type": "main", "index": 0 }]] },
+    "Date Valid?": {
+      "main": [
+        [{ "node": "Check Availability", "type": "main", "index": 0 }],
+        [{ "node": "Past Date Reply", "type": "main", "index": 0 }]
+      ]
+    },
+    "Check Availability": { "main": [[{ "node": "Check Slot", "type": "main", "index": 0 }]] },
+    "Check Slot": { "main": [[{ "node": "Slot Free?", "type": "main", "index": 0 }]] },
+    "Slot Free?": {
+      "main": [
+        [{ "node": "Create Calendar Event", "type": "main", "index": 0 }],
+        [{ "node": "Slot Taken Reply", "type": "main", "index": 0 }]
+      ]
+    },
+    "Create Calendar Event": { "main": [[{ "node": "Alert Zahid", "type": "main", "index": 0 }]] },
+    "Alert Zahid": { "main": [[{ "node": "Confirm to Student", "type": "main", "index": 0 }]] },
+    "Clear History": { "main": [[{ "node": "Optout Reply", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}
